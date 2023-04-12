@@ -40,19 +40,17 @@ function setIcon(tabId, score) {
   
                                                                                                                                                                                                                                                   
   function updateIcon(tabId, score) {
-    let iconPath = "";
-    if (score >= 0) {
-      iconPath = "images/happy-face.png";
-    } else {
-      iconPath = "images/sad-face.png";
-    }
-  
-    chrome.browserAction.setIcon({ path: iconPath, tabId: tabId }, () => {
-      if (chrome.runtime.lastError) {
-        console.error(chrome.runtime.lastError.message);
-      }
-    });
+    const iconPath = score >= 0 ? "images/happy-icon-48.png" : "images/sad-icon-48.png";
+    chrome.action.setIcon({ path: iconPath, tabId: tabId });
   }
+  
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "updateIcon") {
+      const { tabId, score } = request;
+      updateIcon(tabId, score);
+    }
+  });
+  
   
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
