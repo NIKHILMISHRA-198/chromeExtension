@@ -39,18 +39,21 @@ function setIcon(tabId, score) {
   }
   
                                                                                                                                                                                                                                                   
-function updateIcon(tabId, scoreTag) {
-  const iconPath = `icons/${scoreTag}.png`;
-
-  chrome.browserAction.setIcon({
-    path: {
-      "16": iconPath,
-      "48": iconPath,
-      "128": iconPath
-    },
-    tabId: tabId
-  });
-}
+  function updateIcon(tabId, score) {
+    let iconPath = "";
+    if (score >= 0) {
+      iconPath = "images/happy-face.png";
+    } else {
+      iconPath = "images/sad-face.png";
+    }
+  
+    chrome.browserAction.setIcon({ path: iconPath, tabId: tabId }, () => {
+      if (chrome.runtime.lastError) {
+        console.error(chrome.runtime.lastError.message);
+      }
+    });
+  }
+  
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.active) {
