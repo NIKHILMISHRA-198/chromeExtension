@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My Chrome Extension Popup</title>
+    <style>
+      #score-container {
+        text-align: center;
+        display: none;
+      }
+
+      #score-icon {
+        width: 50%;
+        max-width: 150px;
+      }
+
+      #score {
+        font-size: 24px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Sentiment Analysis Score</h1>
+    <div id="score-container">
+      <img id="score-icon" src="">
+      <p id="score"></p>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
