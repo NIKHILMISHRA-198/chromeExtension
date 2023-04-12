@@ -1,33 +1,28 @@
 {
-    "name": "My Chrome Extension",
-    "version": "1.0",
-    "manifest_version": 3,
-    "description": "My awesome Chrome extension",
-    "icons": {
-      "16": "icon16.png",
-      "48": "icon48.png",
-      "128": "icon128.png"
+  "manifest_version": 2,
+  "name": "Chrome Extension",
+  "version": "1.0",
+  "description": "This is a Chrome extension",
+  "permissions": ["activeTab"],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "browser_action": {
+    "default_icon": {
+      "16": "images/neutral-icon-16.png",
+      "32": "images/neutral-icon-32.png",
+      "48": "images/neutral-icon-48.png",
+      "128": "images/neutral-icon-128.png"
     },
-    "host_permissions": [
-      "<all_urls>"
-    ],
-    "background": {
-      "service_worker": "background.js"
-    },
-    "action": {
-      "default_icon": "icon16.png",
-      "default_popup": "popup.html"
-    },
-
-    "chrome_url_overrides": {
-        "newtab": "popup.html"
-      },
-      "content_scripts": [
-        {
-          "matches": ["<all_urls>"],
-          "js": ["content.js"]
-        }
-      ]    
-      
-  }
-  
+    "default_title": "Chrome Extension",
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": ["images/*"]
+}

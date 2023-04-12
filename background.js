@@ -1,75 +1,95 @@
-const API_KEY = "6d43a0b33a9438777ff5197a892268a6";
 
-function analyzeSentiment(text) {
-  const url = `https://api.meaningcloud.com/sentiment-2.1?key=${API_KEY}&of=json&txt=${encodeURIComponent(text)}&model=general`;
+// Listen for messages from content.js
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.message === "calculateScore") {
+    let text = request.text;
+    let score = calculateScore(text);
+    sendResponse({ score: score });
+  }
+});
 
-  return fetch(url)
-    .then(response => response.json())
-    .then(data => {
-      if (data.status.code === '0') {
-        return data.score_tag;
-      } else {
-        throw new Error(`Failed to analyze sentiment: ${data.status.msg}`);
+// Calculate the sentiment score of a given text
+function calculateScore(text) {
+  const apiKey = "6d43a0b33a9438777ff5197a892268a6"; // replace with your API key
+  const apiUrl = "https://api.meaningcloud.com/sentiment-2.1";
+  const lang = "en";
+
+  const params = new URLSearchParams({
+    key: apiKey,
+    lang: lang,
+    txt: text,
+  });
+
+  // Send request to MeaningCloud API
+  return fetch(`${apiUrl}?${params}`)
+    .then((response) => response.json())
+    .then((data) => {
+      const agreement = data.agreement.toLowerCase();
+      const scoreTag = data.score_tag.toLowerCase();
+      let score = 0;
+
+      // Calculate score based on agreement and score tag
+      if (agreement === "agreement") {
+        if (scoreTag === "p+" || scoreTag === "p") {
+          score = 1;
+        } else if (scoreTag === "n+" || scoreTag === "n") {
+          score = -1;
+        }
+      } else if (agreement === "disagreement") {
+        if (scoreTag === "p+" || scoreTag === "p") {
+          score = -1;
+        } else if (scoreTag === "n+" || scoreTag === "n") {
+          score = 1;
+        }
       }
+      return score;
+    })
+    .catch((error) => {
+      console.error(error);
+      return 0;
     });
 }
-function setIcon(tabId, score) {
-    let iconPath = "";
-    if (score >= 0.7) {
-      iconPath = "icons/happy.png";
-    } else if (score >= 0.4) {
-      iconPath = "icons/neutral.png";
-    } else {
-      iconPath = "icons/sad.png";
-    }
-  
-    chrome.browserAction.setIcon({
-      tabId: tabId,
-      path: {
-        "16": iconPath,
-        "32": iconPath,
-        "48": iconPath,
-        "128": iconPath
-      }
-    }, () => {
-      if (chrome.runtime.lastError) {
-        console.error(chrome.runtime.lastError.message);
-      }
-    });
-  }
-  
-                                                                                                                                                                                                                                                  
-  function updateIcon(tabId, score) {
-    const iconPath = score >= 0 ? "images/happy-icon-48.png" : "images/sad-icon-48.png";
-    chrome.action.setIcon({ path: iconPath, tabId: tabId });
-  }
-  
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "updateIcon") {
-      const { tabId, score } = request;
-      updateIcon(tabId, score);
-    }
-  });
-  
-  
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.active) {
-    chrome.tabs.sendMessage(tabId, {action: "analyzePage"}, response => {
-      if (response && response.sentences) {
-        Promise.all(response.sentences.map(sentence => analyzeSentiment(sentence.text)))
-          .then(scores => {
-            const overallScore = scores.reduce((total, score) => total + score, 0) / scores.length;
-            const scoreTag = overallScore >= 0 ? "positive" : "negative";
-            updateIcon(tabId, scoreTag);
-          })
-          .catch(error => {
-            console.error(error);
-            updateIcon(tabId, "neutral");
-          });
-      } else {
-        updateIcon(tabId, "neutral");
-      }
-    });
+// Update extension icon based on the overall sentiment score
+function updateIcon(score) {
+  let iconPath;
+  if (score > 0.5) {
+    iconPath = "images/happy-icon-48.png";
+  } else if (score < -0.5) {
+    iconPath = "images/sad-icon-48.png";
+  } else {
+    iconPath = "images/neutral-icon-48.png";
   }
+  chrome.browserAction.setIcon({ path: iconPath });
+}
+
+// Update the overall sentiment score in the popup
+function updateScore() {
+  chrome.storage.local.get("overallScore", (data) => {
+    const overallScore = data.overallScore || 0;
+    document.getElementById("score").textContent = `Score: ${overallScore.toFixed(2)}`;
+  });
+}
+
+// Listen for messages from popup.js
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.message === "updateScore") {
+    updateScore();
+  }
+});
+
+// Listen for updates to the overall sentiment score
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.overallScore) {
+    const overallScore = changes.overallScore.newValue;
+    updateIcon(overallScore);
+    updateScore();
+  }
+});
+
+// Initialize extension by updating icon and score
+chrome.storage.local.get("overallScore", (data) => {
+  const overallScore = data.overallScore || 0;
+  updateIcon(overallScore);
+  updateScore();
 });
